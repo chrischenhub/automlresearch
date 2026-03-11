@@ -1,5 +1,5 @@
 """
-prepare.py — Fixed infrastructure for automl-research.
+prepare.py — Fixed infrastructure for automlresearch.
 DO NOT MODIFY. The agent only modifies train.py.
 
 This file provides:

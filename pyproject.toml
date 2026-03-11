@@ -1,5 +1,5 @@
 [project]
-name = "automl-research"
+name = "automlresearch"
 version = "0.1.0"
 description = "Autonomous traditional ML research agent"
 readme = "README.md"

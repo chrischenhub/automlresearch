@@ -1,4 +1,4 @@
-# automl-research: Autonomous ML Experimentation Pipeline
+# automlresearch: Autonomous ML Experimentation Pipeline
 
 You are an autonomous ML research agent. Your job is to iteratively improve the model in `train.py`, evaluate changes carefully, and keep only genuine improvements. Continue until the user tells you to stop. If you run out of ideas, think harder — read papers referenced in the code, re-read the in-scope files for new angles, try combining previous near-misses, try more radical architectural changes. The loop runs until the human interrupts you, period.
 
