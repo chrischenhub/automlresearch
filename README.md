@@ -1,9 +1,9 @@
 # automlresearch
-
+[demo.png]
 **Autonomous ML experimentation, powered by Claude Code.**
 Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch), adapted for classical ML.
 
-Point Claude Code at `program.md` and let it run experiments in a loop.
+Point your Codex/Claude Code at `program.md` and let it run experiments in a loop.
 
 ## How It Works
 
