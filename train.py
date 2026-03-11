@@ -5,7 +5,7 @@ Target: Survived (0/1). Metric: val_accuracy (maximize).
 
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegressionCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 
@@ -88,7 +88,7 @@ print(f"X shape: {X.shape}, y mean: {y.mean():.3f}")
 
 model = Pipeline([
     ("scaler", StandardScaler()),
-    ("clf", LogisticRegression(C=1.0, max_iter=1000, random_state=RANDOM_SEED)),
+    ("clf", LogisticRegressionCV(Cs=np.logspace(-3, 3, 30), cv=5, scoring="accuracy", max_iter=2000, random_state=RANDOM_SEED)),
 ])
 
 # ============================================================================
