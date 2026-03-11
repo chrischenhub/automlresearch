@@ -23,6 +23,11 @@ from sklearn.dummy import DummyClassifier, DummyRegressor
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+_run_state = {
+    "last_runtime_seconds": None,
+    "last_holdout_score": "-",
+}
+
 # ============================================================================
 # CONSTANTS — Edit these for your project, then never touch prepare.py again.
 #
@@ -188,10 +193,32 @@ def _score_from_raw(scoring: str, raw_scores: np.ndarray) -> float:
 
 
 def evaluate_cv(model, X, y) -> float:
-    """Run CV on (X, y) and return the metric. Fast but may be optimistic if features leak."""
+    """
+    Run CV on (X, y) and return the metric. Fast but may be optimistic if features leak.
+    Automatically runs leakage_check() against the naive baseline and previous best.
+    """
     scoring = get_scoring()
     scores = cross_val_score(model, X, y, cv=get_cv_splitter(), scoring=scoring, n_jobs=-1)
-    return _score_from_raw(scoring, scores)
+    result = _score_from_raw(scoring, scores)
+
+    # --- Automatic leakage check ---
+    # Lazily compute naive baseline on first call if not already set
+    if _baseline_state["naive_baseline"] is None:
+        _baseline_state["naive_baseline"] = compute_naive_baseline(y)
+
+    naive = _baseline_state["naive_baseline"]
+    prev  = _baseline_state["prev_best"]
+    leakage_check(result, naive, prev)
+
+    # Update prev_best if this is an improvement
+    if prev is None:
+        _baseline_state["prev_best"] = result
+    elif METRIC_DIRECTION == "minimize" and result < prev:
+        _baseline_state["prev_best"] = result
+    elif METRIC_DIRECTION == "maximize" and result > prev:
+        _baseline_state["prev_best"] = result
+
+    return result
 
 
 def evaluate_holdout(model, X_tr, y_tr, X_ho, y_ho) -> float:
@@ -201,20 +228,23 @@ def evaluate_holdout(model, X_tr, y_tr, X_ho, y_ho) -> float:
     """
     model.fit(X_tr, y_tr)
     if METRIC_NAME == "val_logloss":
-        return log_loss(y_ho, model.predict_proba(X_ho))
+        score = log_loss(y_ho, model.predict_proba(X_ho))
     elif METRIC_NAME == "val_auc":
-        return roc_auc_score(y_ho, model.predict_proba(X_ho)[:, 1])
+        score = roc_auc_score(y_ho, model.predict_proba(X_ho)[:, 1])
     elif METRIC_NAME == "val_accuracy":
-        return accuracy_score(y_ho, model.predict(X_ho))
+        score = accuracy_score(y_ho, model.predict(X_ho))
     elif METRIC_NAME in ("val_rmse", "val_mse"):
         preds = model.predict(X_ho)
         mse = mean_squared_error(y_ho, preds)
-        return np.sqrt(mse) if METRIC_NAME == "val_rmse" else mse
+        score = np.sqrt(mse) if METRIC_NAME == "val_rmse" else mse
     elif METRIC_NAME == "val_r2":
         from sklearn.metrics import r2_score
-        return r2_score(y_ho, model.predict(X_ho))
+        score = r2_score(y_ho, model.predict(X_ho))
     else:
-        return log_loss(y_ho, model.predict_proba(X_ho))
+        score = log_loss(y_ho, model.predict_proba(X_ho))
+
+    _run_state["last_holdout_score"] = score
+    return score
 
 
 def compute_naive_baseline(y) -> float:
@@ -234,10 +264,61 @@ def compute_naive_baseline(y) -> float:
     return _score_from_raw(scoring, scores)
 
 
-def print_metric(value: float, label: str = None):
-    """Print the metric in the expected format."""
+def print_metric(value: float, label: str = None, description: str = ""):
+    """Print the metric and auto-append to results.tsv."""
     tag = label or METRIC_NAME
     print(f"{tag}: {value:.6f}")
+
+    # Auto-record to results.tsv
+    _record_result(value, description)
+
+
+def _record_result(value: float, description: str = ""):
+    """Append experiment result to results.tsv. Creates file with header if missing."""
+    import datetime
+    results_path = "results.tsv"
+    header = "experiment\tdescription\tmetric_name\tcv_score\tholdout_score\tkept\truntime_seconds\ttimestamp\n"
+
+    prev_scores = []
+    exp_num = 0
+    if os.path.exists(results_path):
+        prior = pd.read_csv(results_path, sep="\t")
+        if "experiment" in prior.columns and not prior.empty:
+            exp_num = int(pd.to_numeric(prior["experiment"], errors="coerce").dropna().max()) + 1
+        if "cv_score" in prior.columns:
+            prev_scores = pd.to_numeric(prior["cv_score"], errors="coerce").dropna().tolist()
+    else:
+        with open(results_path, "w") as f:
+            f.write(header)
+
+    holdout_score = _run_state["last_holdout_score"]
+    if isinstance(holdout_score, (float, int, np.floating, np.integer)):
+        holdout_value = f"{float(holdout_score):.6f}"
+    else:
+        holdout_value = str(holdout_score)
+
+    prev_best = None if not prev_scores else (min(prev_scores) if METRIC_DIRECTION == "minimize" else max(prev_scores))
+    if holdout_value == "LEAKY":
+        kept = "no"
+    elif prev_best is None:
+        kept = "ref"
+    elif METRIC_DIRECTION == "minimize":
+        kept = "yes" if value < prev_best else "no"
+    else:
+        kept = "yes" if value > prev_best else "no"
+
+    runtime_seconds = _run_state["last_runtime_seconds"]
+    elapsed_value = "" if runtime_seconds is None else f"{runtime_seconds:.1f}"
+
+    row = (
+        f"{exp_num}\t{description}\t{METRIC_NAME}\t{value:.6f}\t{holdout_value}\t"
+        f"{kept}\t{elapsed_value}\t"
+        f"{datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')}\n"
+    )
+    with open(results_path, "a") as f:
+        f.write(row)
+    _run_state["last_holdout_score"] = "-"
+    print(f"Recorded exp {exp_num} in results.tsv")
 
 
 # ============================================================================
@@ -256,6 +337,13 @@ def print_metric(value: float, label: str = None):
 
 LEAKAGE_NAIVE_THRESHOLD = 0.40   # CV beats naive by more than 40% → suspicious
 LEAKAGE_STEP_THRESHOLD  = 0.15   # single step improves by more than 15% → suspicious
+
+# Internal state for automatic leakage checking.
+# Populated by verify_setup() and updated by evaluate_cv().
+_baseline_state = {
+    "naive_baseline": None,
+    "prev_best": None,
+}
 
 
 def leakage_check(cv_score: float, naive_baseline: float, prev_best: float = None) -> bool:
@@ -317,6 +405,7 @@ class Timer:
 
     def __exit__(self, *args):
         self.elapsed = time.time() - self.start
+        _run_state["last_runtime_seconds"] = self.elapsed
         print(f"elapsed: {self.elapsed:.1f}s")
 
 
@@ -439,6 +528,7 @@ def verify_setup() -> bool:
     # --- Naive baseline ---
     y = df[TARGET_COL].values
     naive = compute_naive_baseline(y)
+    _baseline_state["naive_baseline"] = naive
     print(f"\n  Naive baseline ({METRIC_NAME}): {naive:.6f}")
     print(f"  Any model must beat this. Flag if CV beats it by >{LEAKAGE_NAIVE_THRESHOLD:.0%}.")
 

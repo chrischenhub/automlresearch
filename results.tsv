@@ -1,0 +1,18 @@
+experiment	description	metric_name	cv_score	holdout_score	kept	runtime_seconds	timestamp
+0	naive baseline (predict majority)	val_accuracy	0.616163	-	ref	0.1	2026-03-10T21:47:46
+1	logistic regression: sex+pclass+age+fare+family+embarked	val_accuracy	0.796880	-	yes	1.0	2026-03-10T21:47:46
+2	add title extraction from Name (Mr/Mrs/Miss/Master)	val_accuracy	0.828272	-	yes	2.2	2026-03-11T03:46:45
+3	HistGradientBoosting (default-ish params)	val_accuracy	0.819289	-	no	1.7	2026-03-11T03:47:30
+4	LogisticRegressionCV (tune C via inner CV)	val_accuracy	0.832766	-	yes	1.7	2026-03-11T03:48:08
+5	add cabin deck one-hot + has_cabin	val_accuracy	0.824901	-	no	1.8	2026-03-11T03:48:37
+6	add pclass*female and age*pclass interactions	val_accuracy	0.828278	-	no	1.9	2026-03-11T03:49:05
+7	RandomForest (500 trees, depth=7)	val_accuracy	0.831649	-	no	2.3	2026-03-11T03:49:36
+8	add is_child and is_elderly age bins	val_accuracy	0.830525	-	no	1.7	2026-03-11T03:50:12
+9	add ticket_group_size from combined train+test	val_accuracy	0.831643	-	no	1.7	2026-03-11T03:51:00
+10	add fare_per_person (log1p fare/family)	val_accuracy	0.828272	-	no	1.8	2026-03-11T03:51:38
+11	soft voting ensemble (LR+RF+HGB)	val_accuracy	0.846237	-	yes	2.7	2026-03-11T03:52:37
+12	soft voting ensemble LR+RF+HGB, title features	val_accuracy	0.846237	-	no	2.5	2026-03-11T03:56:15
+13	CatBoost with title/deck/ticket-prefix categorical features	val_accuracy	0.832747	-	no	2.5	2026-03-11T06:01:11
+14	weighted soft voting ensemble LR+RF+HGB (2,1,2)	val_accuracy	0.851836	-	yes	2.4	2026-03-11T06:03:18
+15	vote212 rf6	val_accuracy	0.851836	-	no	2.5	2026-03-11T06:27:10
+16	vote212 rf6 hgb0.05	val_accuracy	0.852972	0.865922	yes	3.0	2026-03-11T06:50:13

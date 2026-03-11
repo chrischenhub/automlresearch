@@ -1,0 +1,30 @@
+# Data files (too large for git)
+*.csv.gz
+*.csv
+*.parquet
+*.xlsx
+*.xls
+
+# Experiment artifacts
+run.log
+last_run_output.ipynb
+predictions.csv
+submission.csv
+holdout_indices.npy
+catboost_info/
+progress.png
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# uv
+uv.lock
