@@ -22,8 +22,8 @@ np.random.seed(RANDOM_SEED)
 # ============================================================================
 
 with Timer():
-    df       = load_train_data()
-    test_df  = load_test_data()
+    df      = load_train_data()
+    test_df = load_test_data()
     print(f"  train: {df.shape}, test: {test_df.shape}")
 
 # ============================================================================
@@ -36,13 +36,22 @@ def engineer_features(df):
     # Sex
     df["is_female"] = (df["Sex"] == "female").astype(int)
 
-    # Pclass as-is (ordinal, already numeric)
+    # Title extracted from Name
+    df["Title"] = df["Name"].str.extract(r" ([A-Za-z]+)\.", expand=False)
+    df["Title"] = df["Title"].replace(
+        ["Lady","Countess","Capt","Col","Don","Dr","Major","Rev","Sir","Jonkheer","Dona"],
+        "Rare"
+    )
+    df["Title"] = df["Title"].replace({"Mlle": "Miss", "Ms": "Miss", "Mme": "Mrs"})
+    df["title_Mr"]     = (df["Title"] == "Mr").astype(int)
+    df["title_Mrs"]    = (df["Title"] == "Mrs").astype(int)
+    df["title_Miss"]   = (df["Title"] == "Miss").astype(int)
+    df["title_Master"] = (df["Title"] == "Master").astype(int)
 
-    # Age: fill missing with median, add missing indicator
+    # Age: fill missing with median
     df["Age"] = df["Age"].fillna(df["Age"].median())
-    df["age_missing"] = df["Age"].isna().astype(int)
 
-    # Fare: fill missing with median, log-transform (right-skewed)
+    # Fare: fill missing, log-transform (right-skewed)
     df["Fare"] = df["Fare"].fillna(df["Fare"].median())
     df["log_fare"] = np.log1p(df["Fare"])
 
@@ -62,16 +71,15 @@ test_df = engineer_features(test_df)
 
 feature_cols = [
     "is_female", "Pclass", "Age", "log_fare",
-    "family_size", "is_alone",
-    "SibSp", "Parch",
+    "family_size", "is_alone", "SibSp", "Parch",
     "embarked_C", "embarked_Q",
+    "title_Mr", "title_Mrs", "title_Miss", "title_Master",
 ]
 
 X      = df[feature_cols].values
 y      = df[TARGET_COL].astype(int).values
 X_test = test_df[feature_cols].values
 
-print(f"Features: {feature_cols}")
 print(f"X shape: {X.shape}, y mean: {y.mean():.3f}")
 
 # ============================================================================
