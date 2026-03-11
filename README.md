@@ -3,6 +3,8 @@
 **Autonomous ML experimentation**
 Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch), adapted for classical ML.
 
+`automlresearch` is a self-improving research scaffold for tabular machine learning: it lets an agent iteratively modify `train.py`, run experiments, detect leakage, log results, and commit only better-performing changes.
+
 Point your Codex/Claude Code at `program.md` and let it run experiments in a loop.
 
 ## How It Works

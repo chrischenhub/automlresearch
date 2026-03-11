@@ -1,7 +1,7 @@
 [project]
 name = "automlresearch"
 version = "0.1.0"
-description = "Autonomous traditional ML research agent"
+description = "Self-improving tabular ML research scaffold for autonomous experimentation"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
