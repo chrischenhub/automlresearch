@@ -6,6 +6,7 @@ Target: Survived (0/1). Metric: val_accuracy (maximize).
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegressionCV
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier, VotingClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 
@@ -86,10 +87,17 @@ print(f"X shape: {X.shape}, y mean: {y.mean():.3f}")
 # Model — logistic regression baseline
 # ============================================================================
 
-model = Pipeline([
+lr = Pipeline([
     ("scaler", StandardScaler()),
     ("clf", LogisticRegressionCV(Cs=np.logspace(-3, 3, 30), cv=5, scoring="accuracy", max_iter=2000, random_state=RANDOM_SEED)),
 ])
+rf = RandomForestClassifier(n_estimators=500, max_depth=7, min_samples_leaf=5, random_state=RANDOM_SEED, n_jobs=-1)
+hgb = HistGradientBoostingClassifier(max_iter=200, max_leaf_nodes=31, min_samples_leaf=20, random_state=RANDOM_SEED)
+
+model = VotingClassifier(
+    estimators=[("lr", lr), ("rf", rf), ("hgb", hgb)],
+    voting="soft",
+)
 
 # ============================================================================
 # Evaluate
