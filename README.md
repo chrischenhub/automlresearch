@@ -7,6 +7,8 @@ Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch),
 
 Point your Codex/Claude Code at `program.md` and let it run experiments in a loop.
 
+Current demo: this repo includes the Kaggle Titanic `train.csv`/`test.csv` pair and a completed autonomous run. The agent starts from a baseline, iterates through feature and model changes, and records each trial in `results.tsv`; in the current log, the best kept run is experiment 14 with `val_accuracy=0.851836` using a weighted LR+RF+HGB soft-voting ensemble. The resulting prediction snapshot is shown in `demo.png`.
+
 ## How It Works
 
 ```
