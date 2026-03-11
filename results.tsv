@@ -15,4 +15,3 @@ experiment	description	metric_name	cv_score	holdout_score	kept	runtime_seconds	t
 13	CatBoost with title/deck/ticket-prefix categorical features	val_accuracy	0.832747	-	no	2.5	2026-03-11T06:01:11
 14	weighted soft voting ensemble LR+RF+HGB (2,1,2)	val_accuracy	0.851836	-	yes	2.4	2026-03-11T06:03:18
 15	vote212 rf6	val_accuracy	0.851836	-	no	2.5	2026-03-11T06:27:10
-16	vote212 rf6 hgb0.05	val_accuracy	0.852972	0.865922	yes	3.0	2026-03-11T06:50:13
