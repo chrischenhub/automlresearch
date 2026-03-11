@@ -1,5 +1,5 @@
 # automlresearch
-[demo.png]
+![demo](demo.png)
 **Autonomous ML experimentation, powered by Claude Code.**
 Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch), adapted for classical ML.
 
